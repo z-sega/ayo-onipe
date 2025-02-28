@@ -56,7 +56,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo mkdir -p $DEPLOY_DIR && sudo chown $USER:$USER $DEPLOY_DIR"
 
           # Sync new distribution to /var/www/ayo-onipe/
-          rsync -avz -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no" dist/ $USER@$EC2_HOST:$DEPLOY_DIR/
+          rsync -avz -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no" dist/ $USER@$EC2_HOST:$DEPLOY_DIR/dist/
 
           # Restart the service
           ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo systemctl restart $SERVICE_NAME"
