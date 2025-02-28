@@ -42,7 +42,7 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_IP }}
           SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          USER: "ec2-user"
+          USER: "ubuntu"
           DEPLOY_DIR: "/var/www/ayo-onipe"
           SERVICE_NAME: "ayoonipe.com.service"
         run: |
