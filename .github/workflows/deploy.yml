@@ -58,6 +58,9 @@ jobs:
           # Sync new distribution to /var/www/ayo-onipe/
           rsync -avz -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no" dist/ $USER@$EC2_HOST:$DEPLOY_DIR/dist/
 
+          # Add execute permission in distributed artifact
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "chmod +x $DEPLOY_DIR/dist/bin/app"
+                    
           # Restart the service
           ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo systemctl restart $SERVICE_NAME"
 
