@@ -1,0 +1,65 @@
+name: Deploy Racket App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Racket
+        run: sudo apt update && sudo apt install racket -y
+
+      - name: Build Racket Distribution
+        run: |
+          raco exe -o app app.rkt
+          raco distribute dist app
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: racket-distribution
+          path: dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: racket-distribution
+          path: dist/
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_IP }}
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          USER: "ec2-user"
+          DEPLOY_DIR: "/var/www/ayo-onipe"
+          SERVICE_NAME: "ayoonipe.com.service"
+        run: |
+          echo "$SSH_KEY" > ssh_key.pem
+          chmod 600 ssh_key.pem
+
+          # Stop existing service
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo systemctl stop $SERVICE_NAME"
+
+          # Ensure the deployment directory exists
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo mkdir -p $DEPLOY_DIR && sudo chown $USER:$USER $DEPLOY_DIR"
+
+          # Sync new distribution to /var/www/ayo-onipe/
+          rsync -avz -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no" dist/ $USER@$EC2_HOST:$DEPLOY_DIR/
+
+          # Restart the service
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem $USER@$EC2_HOST "sudo systemctl restart $SERVICE_NAME"
+
+      - name: Cleanup
+        run: rm -f ssh_key.pem
